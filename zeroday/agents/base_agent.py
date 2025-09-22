@@ -8,8 +8,8 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Union
 from pydantic import BaseModel, Field
 
-from nat.core import register_function, Builder
-from nat.core.types import LLMFrameworkEnum
+from nat.builder.builder import Builder
+from nat.cli.register_workflow import LLMFrameworkEnum
 from nat.profiler.decorators.function_tracking import track_function
 
 
@@ -141,7 +141,7 @@ class SecurityAgentConfig(AgentConfig):
     )
     analysis_depth: str = Field(
         default="deep", 
-        choices=["shallow", "medium", "deep"],
+        examples=["shallow", "medium", "deep"],
         description="Analysis depth level"
     )
 
