@@ -1,0 +1,10 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Check Agent Import Issues",
+			"type": "shell",
+			"command": "cd /Users/gareth/cyber/zeroday && find . -name '*.py' -exec grep -l 'class.*Agent' {} \\;"
+		}
+	]
+}
