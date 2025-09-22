@@ -78,7 +78,14 @@ class OrchestrationAgent(BaseAgent):
         # Initialize each agent
         for agent_name, agent in self.agents.items():
             try:
-                await agent.initialize(self.builder)
+                init_result = agent.initialize()
+                if hasattr(init_result, '__await__'):
+                    await init_result
+                elif hasattr(init_result, '__call__'):
+                    # Handle wrapped function case
+                    actual_init = init_result()
+                    if hasattr(actual_init, '__await__'):
+                        await actual_init
                 self.logger.info(f"Initialized {agent_name} agent")
             except Exception as e:
                 self.logger.error(f"Failed to initialize {agent_name} agent: {str(e)}")
