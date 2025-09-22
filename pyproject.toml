@@ -1,0 +1,125 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "zeroday-pipeline"
+version = "0.1.0"
+description = "Multi-agent zero-day vulnerability detection pipeline using NVIDIA NeMo Agent Toolkit and DeepHat"
+authors = [
+    {name = "ZeroDay Team", email = "team@zeroday.dev"}
+]
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.9"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Information Technology",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Security",
+    "Topic :: Software Development :: Quality Assurance",
+]
+keywords = ["security", "vulnerability", "zero-day", "ai", "agents", "nemo"]
+
+dependencies = [
+    "nvidia-nat[profiling]",
+    "torch>=2.0.0",
+    "transformers>=4.37.0",
+    "accelerate",
+    "crewai",
+    "langchain",
+    "langchain-community",
+    "bandit[toml]",
+    "gitpython",
+    "pandas",
+    "numpy",
+    "pydantic>=2.0.0",
+    "pyyaml",
+    "requests",
+    "aiohttp",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-asyncio",
+    "black",
+    "flake8",
+    "mypy",
+]
+analysis = [
+    "semgrep",
+    "safety",
+    "pip-audit",
+    "tree-sitter",
+    "tree-sitter-python",
+    "networkx",
+]
+viz = [
+    "matplotlib",
+    "seaborn",
+]
+
+[project.urls]
+Homepage = "https://github.com/oiiio/zeroday"
+Repository = "https://github.com/oiiio/zeroday.git"
+Issues = "https://github.com/oiiio/zeroday/issues"
+
+[project.scripts]
+zeroday-analyze = "zeroday.scripts.run_analysis:main"
+zeroday-setup = "zeroday.scripts.setup_deephat:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["zeroday*"]
+
+[tool.black]
+line-length = 88
+target-version = ['py39']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+  | data/repositories
+)/
+'''
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short"
+asyncio_mode = "auto"
+
+[tool.bandit]
+exclude_dirs = ["tests", "data/repositories"]
+skips = ["B101"]  # Skip assert_used test

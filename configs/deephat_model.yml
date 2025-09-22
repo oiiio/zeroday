@@ -1,0 +1,44 @@
+# DeepHat Model Configuration for ZeroDay Pipeline
+
+model:
+  name: "DeepHat/DeepHat-V1-7B"
+  type: "huggingface"
+  
+  # Model loading parameters
+  torch_dtype: "auto"  # auto, float16, bfloat16
+  device_map: "auto"   # auto, cuda, cpu
+  trust_remote_code: true
+  
+  # Generation parameters
+  max_new_tokens: 2048
+  temperature: 0.1
+  do_sample: true
+  pad_token_id: null  # Will use eos_token_id
+  
+  # Context and memory settings
+  max_context_length: 32768
+  
+  # System prompt
+  system_prompt: "You are DeepHat, created by Kindo.ai. You are a helpful assistant that is an expert in Cybersecurity and DevOps."
+
+# Hugging Face settings
+huggingface:
+  cache_dir: "./cache/huggingface"
+  use_auth_token: false  # Set to true if model requires authentication
+  
+# Performance settings
+performance:
+  batch_size: 1
+  gradient_checkpointing: false
+  use_cache: true
+  
+# Memory optimization
+memory:
+  low_cpu_mem_usage: true
+  offload_folder: "./cache/offload"
+  
+# Quantization (optional)
+quantization:
+  enabled: false
+  bits: 8  # 4 or 8
+  device_map: "auto"

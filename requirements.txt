@@ -1,0 +1,52 @@
+# NVIDIA NeMo Agent Toolkit
+nvidia-nat[profiling]
+
+# DeepHat Model Dependencies
+torch>=2.0.0
+transformers>=4.37.0
+accelerate
+bitsandbytes
+
+# Multi-agent Framework
+crewai
+langchain
+langchain-community
+langchain-openai
+
+# Python Code Analysis
+ast
+bandit[toml]
+semgrep
+gitpython
+tree-sitter
+tree-sitter-python
+
+# Data Processing
+pandas
+numpy
+pydantic>=2.0.0
+pyyaml
+jsonschema
+
+# Security Tools Integration
+safety
+pip-audit
+
+# Utilities
+requests
+aiohttp
+asyncio
+pathlib
+typing-extensions
+
+# Development & Testing
+pytest
+pytest-asyncio
+black
+flake8
+mypy
+
+# Optional: For advanced analysis
+networkx  # For dependency graph analysis
+matplotlib  # For visualization in reports
+seaborn  # For profiling charts

@@ -205,3 +205,57 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# ZeroDay Pipeline Specific
+# Environment variables
+.env
+
+# Downloaded repositories (temporary analysis)
+data/repositories/
+data/reports/
+.tmp/
+
+# Model cache and downloads
+models/
+cache/
+*.bin
+*.safetensors
+
+# Hugging Face cache
+.cache/huggingface/
+
+# NeMo Agent Toolkit outputs
+.nat/
+nat_outputs/
+
+# Security scanner outputs
+bandit_output/
+semgrep_output/
+safety_output/
+
+# Large files and datasets
+*.tar.gz
+*.zip
+*.7z
+data/evaluation/large_datasets/
+
+# Profiling and evaluation results
+profiling_results/
+evaluation_results/
+*.prof
+
+# IDE and editor files
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+*~
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+temp_*
