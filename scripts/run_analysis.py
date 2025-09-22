@@ -87,9 +87,9 @@ async def analyze_repository(repo_url: str, output_dir: str = "./data/reports") 
         print("🚀 Initializing agents...")
         # await orchestration_agent.initialize(builder)
         
-        # Execute pipeline
+        # Execute pipeline - call _execute_core directly to avoid decorator issues
         print("⚙️ Executing vulnerability detection pipeline...")
-        result = await orchestration_agent.execute({"repo_url": repo_url})
+        result = await orchestration_agent._execute_core({"repo_url": repo_url})
         
         return result
         

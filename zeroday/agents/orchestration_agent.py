@@ -331,7 +331,7 @@ class OrchestrationAgent(BaseAgent):
             
             return None
     
-    @track_function(metadata={"agent_type": "orchestration", "operation": "cleanup"})
+    # @track_function(metadata={"agent_type": "orchestration", "operation": "cleanup"})
     async def cleanup(self) -> None:
         """Cleanup all agents"""
         # Skip calling super().cleanup() due to decorator issues
