@@ -1,0 +1,60 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vulnerability Report - vuln_report_20250922_223412</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .header { background-color: #f8f9fa; padding: 20px; border-radius: 5px; }
+        .summary { background-color: #e9ecef; padding: 15px; margin: 20px 0; border-radius: 5px; }
+        .vulnerability { border: 1px solid #ddd; margin: 10px 0; padding: 15px; border-radius: 5px; }
+        .critical { border-left: 5px solid #FF0000; }
+        .high { border-left: 5px solid #FF6600; }
+        .medium { border-left: 5px solid #FFAA00; }
+        .low { border-left: 5px solid #00AA00; }
+        .code { background-color: #f8f9fa; padding: 10px; font-family: monospace; border-radius: 3px; }
+        .recommendations { background-color: #d4edda; padding: 15px; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔒 Vulnerability Assessment Report</h1>
+        <p><strong>Report ID:</strong> vuln_report_20250922_223412</p>
+        <p><strong>Generated:</strong> 2025-09-22T22:34:12.532488</p>
+        <p><strong>Repository:</strong> trottomv_python-insecure-app</p>
+    </div>
+    
+    <div class="summary">
+        <h2>📊 Executive Summary</h2>
+        <p><strong>Overall Risk Level:</strong> Low</p>
+        <p><strong>Total Vulnerabilities:</strong> 1</p>
+        <p><strong>Files Analyzed:</strong> 1</p>
+        
+        <h3>Severity Breakdown:</h3>
+        <ul>
+<li><strong>Low:</strong> 1</li>
+        </ul>
+    </div>
+    
+    <div>
+        <h2>🚨 Vulnerability Findings</h2>
+
+        <div class="vulnerability low">
+            <h3>Suspicious Pattern</h3>
+            <p><strong>File:</strong> ./data/repositories/trottomv_python-insecure-app/app/main.py</p>
+            <p><strong>Severity:</strong> Low</p>
+            <p><strong>Confidence:</strong> 0.60</p>
+            <p><strong>Description:</strong> Suspicious code pattern detected: f"<h1>Hello, {name}!</h1><h2>Public IP: <code>{public_ip}</code></h2>"</p>
+</div>
+    </div>
+    
+    <div class="recommendations">
+        <h2>💡 Recommendations</h2>
+        <ul>
+<li>📚 Conduct regular security code reviews</li><li>🔄 Keep dependencies updated to latest secure versions</li><li>🧪 Implement automated security testing in CI/CD pipeline</li><li>📊 Monitor application for suspicious activities</li><li>🎓 Provide security training for development team</li>
+        </ul>
+    </div>
+</body>
+</html>

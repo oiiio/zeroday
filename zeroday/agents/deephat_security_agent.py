@@ -17,9 +17,13 @@ class DeepHatConfig(SecurityAgentConfig):
     model_path: Optional[str] = Field(default=None, description="Local model path if downloaded")
     device: str = Field(default="auto", description="Device to run model on (auto, cuda, cpu)")
     torch_dtype: str = Field(default="auto", description="Torch dtype (auto, float16, bfloat16)")
+    use_remote: bool = Field(default=False, description="Use remote Hugging Face deployment")
+    hf_api_token: Optional[str] = Field(default=None, description="Hugging Face API token for remote access")
+    remote_endpoint: Optional[str] = Field(default=None, description="Custom remote endpoint URL")
     max_context_length: int = Field(default=32768, description="Maximum context length for analysis")
     temperature: float = Field(default=0.1, description="Temperature for model generation")
     max_new_tokens: int = Field(default=2048, description="Maximum new tokens to generate")
+    show_progress: bool = Field(default=True, description="Show progress during analysis")
     vulnerability_types: List[str] = Field(
         default=[
             "code_injection",
@@ -80,30 +84,33 @@ class DeepHatSecurityAgent(SecurityBaseAgent):
         await self._load_deephat_model()
         self.logger.info("DeepHat Security Agent initialized successfully")
     
-    @track_function(metadata={"agent_type": "deephat_security", "operation": "load_model"})
+    ##@track_function(metadata={"agent_type": "deephat_security", "operation": "load_model"})
     async def _load_deephat_model(self) -> None:
-        """Load DeepHat model and tokenizer"""
+        """Load DeepHat model using enhanced interface (supports both local and remote)"""
         try:
-            # Import transformers here to avoid import errors if not installed
-            from transformers import AutoModelForCausalLM, AutoTokenizer
-            import torch
+            from ..tools.deephat_interface import DeepHatInterface
             
-            model_name_or_path = self.deephat_config.model_path or self.deephat_config.model_name
+            self.logger.info("Initializing DeepHat Security Agent...")
             
-            self.logger.info(f"Loading DeepHat model: {model_name_or_path}")
-            
-            # Load tokenizer
-            self.tokenizer = AutoTokenizer.from_pretrained(model_name_or_path)
-            
-            # Load model with appropriate settings
-            self.model = AutoModelForCausalLM.from_pretrained(
-                model_name_or_path,
-                torch_dtype=self._get_torch_dtype(),
-                device_map=self.deephat_config.device,
-                trust_remote_code=True
+            # Create DeepHat interface with enhanced features
+            self.deephat_interface = DeepHatInterface(
+                model_name=self.deephat_config.model_name,
+                model_path=self.deephat_config.model_path,
+                device=self.deephat_config.device,
+                torch_dtype=self.deephat_config.torch_dtype,
+                use_remote=self.deephat_config.use_remote,
+                hf_api_token=self.deephat_config.hf_api_token,
+                remote_endpoint=self.deephat_config.remote_endpoint
             )
             
-            self.logger.info("DeepHat model loaded successfully")
+            deployment_type = "remote" if self.deephat_config.use_remote else "local"
+            self.logger.info(f"Loading DeepHat model ({deployment_type}): {self.deephat_config.model_name}")
+            
+            # Load the model (local or remote)
+            if not self.deephat_interface.load_model():
+                raise RuntimeError("Failed to initialize DeepHat interface")
+            
+            self.logger.info("DeepHat Security Agent initialized successfully")
             
         except Exception as e:
             self.logger.error(f"Failed to load DeepHat model: {str(e)}")
@@ -120,7 +127,7 @@ class DeepHatSecurityAgent(SecurityBaseAgent):
         else:
             return "auto"
     
-    @track_function(metadata={"agent_type": "deephat_security", "operation": "execute_core"})
+    #@track_function(metadata={"agent_type": "deephat_security", "operation": "execute_core"})
     async def _execute_core(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Core execution logic for DeepHat security analysis
@@ -133,26 +140,43 @@ class DeepHatSecurityAgent(SecurityBaseAgent):
         """
         if not self.validate_input(input_data):
             raise ValueError("Invalid input data")
-        
+
         python_files = input_data["python_files"]
         repo_info = input_data.get("repository_info", {})
-        
+
         self.logger.info(f"Starting DeepHat analysis of {len(python_files)} Python files")
-        
+
         # Filter files that can be analyzed
         analyzable_files = self.filter_analyzable_files(python_files)
         self.logger.info(f"Analyzing {len(analyzable_files)} files within size limits")
-        
-        # Analyze files for vulnerabilities
+
+        # Analyze files for vulnerabilities with progress tracking
         all_findings = []
-        for file_path in analyzable_files:
+        total_files = len(analyzable_files)
+        
+        if self.deephat_config.show_progress:
+            print(f"\n🔍 DeepHat Analysis Progress:")
+            print(f"📁 Files to analyze: {total_files}")
+            
+        for i, file_path in enumerate(analyzable_files, 1):
             try:
+                if self.deephat_config.show_progress:
+                    progress_percent = (i / total_files) * 100
+                    print(f"🔄 [{i}/{total_files}] ({progress_percent:.1f}%) Analyzing: {file_path}")
+                
                 findings = await self._analyze_file(file_path, repo_info)
                 all_findings.extend(findings)
+                
+                if self.deephat_config.show_progress and findings:
+                    print(f"   ⚠️  Found {len(findings)} potential vulnerabilities")
+                    
             except Exception as e:
                 self.logger.error(f"Failed to analyze {file_path}: {str(e)}")
-        
-        # Filter findings by confidence threshold
+                if self.deephat_config.show_progress:
+                    print(f"   ❌ Analysis failed: {str(e)}")
+
+        if self.deephat_config.show_progress:
+            print(f"✅ Analysis complete! Found {len(all_findings)} total potential vulnerabilities\n")        # Filter findings by confidence threshold
         high_confidence_findings = [
             f for f in all_findings 
             if f.confidence >= self.security_config.vulnerability_confidence_threshold
@@ -180,7 +204,7 @@ class DeepHatSecurityAgent(SecurityBaseAgent):
             
         return True
     
-    @track_function(metadata={"agent_type": "deephat_security", "operation": "analyze_file"})
+    #@track_function(metadata={"agent_type": "deephat_security", "operation": "analyze_file"})
     async def _analyze_file(self, file_path: str, repo_info: Dict[str, Any]) -> List[VulnerabilityFinding]:
         """Analyze a single Python file for vulnerabilities"""
         findings = []
@@ -211,7 +235,7 @@ class DeepHatSecurityAgent(SecurityBaseAgent):
         
         return findings
     
-    @track_function(metadata={"agent_type": "deephat_security", "operation": "comprehensive_analysis"})
+    #@track_function(metadata={"agent_type": "deephat_security", "operation": "comprehensive_analysis"})
     async def _perform_comprehensive_analysis(self, file_path: str, code_content: str, repo_info: Dict[str, Any]) -> List[VulnerabilityFinding]:
         """Perform comprehensive vulnerability analysis using DeepHat"""
         findings = []
@@ -232,7 +256,7 @@ class DeepHatSecurityAgent(SecurityBaseAgent):
         
         return findings
     
-    @track_function(metadata={"agent_type": "deephat_security", "operation": "zero_day_detection"})
+    #@track_function(metadata={"agent_type": "deephat_security", "operation": "zero_day_detection"})
     async def _detect_zero_day_patterns(self, file_path: str, code_content: str, repo_info: Dict[str, Any]) -> List[VulnerabilityFinding]:
         """Detect potential zero-day vulnerability patterns"""
         findings = []
@@ -364,41 +388,17 @@ If no zero-day patterns are detected, return: []"""
 
         return prompt
     
-    @track_function(metadata={"agent_type": "deephat_security", "operation": "generate_response"})
+    #@track_function(metadata={"agent_type": "deephat_security", "operation": "generate_response"})
     async def _generate_deephat_response(self, prompt: str) -> str:
-        """Generate response from DeepHat model"""
+        """Generate response from DeepHat model using enhanced interface"""
         try:
-            # Prepare messages for chat template
-            messages = [
-                {"role": "system", "content": "You are DeepHat, created by Kindo.ai. You are a helpful assistant that is an expert in Cybersecurity and DevOps."},
-                {"role": "user", "content": prompt}
-            ]
-            
-            # Apply chat template
-            text = self.tokenizer.apply_chat_template(
-                messages,
-                tokenize=False,
-                add_generation_prompt=True
-            )
-            
-            # Tokenize input
-            model_inputs = self.tokenizer([text], return_tensors="pt").to(self.model.device)
-            
-            # Generate response
-            generated_ids = self.model.generate(
-                **model_inputs,
+            # Use the enhanced DeepHat interface with progress tracking
+            response = self.deephat_interface.generate_response(
+                prompt=prompt,
                 max_new_tokens=self.deephat_config.max_new_tokens,
                 temperature=self.deephat_config.temperature,
-                do_sample=True if self.deephat_config.temperature > 0 else False,
-                pad_token_id=self.tokenizer.eos_token_id
+                show_progress=self.deephat_config.show_progress
             )
-            
-            # Decode response
-            generated_ids = [
-                output_ids[len(input_ids):] for input_ids, output_ids in zip(model_inputs.input_ids, generated_ids)
-            ]
-            
-            response = self.tokenizer.batch_decode(generated_ids, skip_special_tokens=True)[0]
             return response
             
         except Exception as e:

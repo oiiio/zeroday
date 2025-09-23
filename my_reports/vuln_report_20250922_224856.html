@@ -1,0 +1,137 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vulnerability Report - vuln_report_20250922_224856</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .header { background-color: #f8f9fa; padding: 20px; border-radius: 5px; }
+        .summary { background-color: #e9ecef; padding: 15px; margin: 20px 0; border-radius: 5px; }
+        .vulnerability { border: 1px solid #ddd; margin: 10px 0; padding: 15px; border-radius: 5px; }
+        .critical { border-left: 5px solid #FF0000; }
+        .high { border-left: 5px solid #FF6600; }
+        .medium { border-left: 5px solid #FFAA00; }
+        .low { border-left: 5px solid #00AA00; }
+        .code { background-color: #f8f9fa; padding: 10px; font-family: monospace; border-radius: 3px; }
+        .recommendations { background-color: #d4edda; padding: 15px; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔒 Vulnerability Assessment Report</h1>
+        <p><strong>Report ID:</strong> vuln_report_20250922_224856</p>
+        <p><strong>Generated:</strong> 2025-09-22T22:48:56.510973</p>
+        <p><strong>Repository:</strong> trottomv_python-insecure-app</p>
+    </div>
+    
+    <div class="summary">
+        <h2>📊 Executive Summary</h2>
+        <p><strong>Overall Risk Level:</strong> Critical</p>
+        <p><strong>Total Vulnerabilities:</strong> 12</p>
+        <p><strong>Files Analyzed:</strong> 3</p>
+        
+        <h3>Severity Breakdown:</h3>
+        <ul>
+<li><strong>Critical:</strong> 3</li><li><strong>High:</strong> 2</li><li><strong>Medium:</strong> 5</li><li><strong>Low:</strong> 2</li>
+        </ul>
+    </div>
+    
+    <div>
+        <h2>🚨 Vulnerability Findings</h2>
+
+        <div class="vulnerability critical">
+            <h3>Hardcoded Credentials</h3>
+            <p><strong>File:</strong> ./data/repositories/trottomv_python-insecure-app/app/config.py</p>
+            <p><strong>Severity:</strong> Critical</p>
+            <p><strong>Confidence:</strong> 1.00</p>
+            <p><strong>Description:</strong> Hardcoded secret token in configuration file</p>
+<div class="code">SUPER_SECRET_TOKEN = "5u93R53Cr3tT0k3n"</div><p><strong>Recommendation:</strong> Remove hardcoded secrets and use environment variables or secure vaults</p></div>
+        <div class="vulnerability critical">
+            <h3>Hardcoded Secrets</h3>
+            <p><strong>File:</strong> ./data/repositories/trottomv_python-insecure-app/app/config.py</p>
+            <p><strong>Severity:</strong> Critical</p>
+            <p><strong>Confidence:</strong> 0.95</p>
+            <p><strong>Description:</strong> Hardcoded secrets in configuration file</p>
+</div>
+        <div class="vulnerability critical">
+            <h3>Environment Variable Manipulation</h3>
+            <p><strong>File:</strong> ./data/repositories/trottomv_python-insecure-app/app/config.py</p>
+            <p><strong>Severity:</strong> Critical</p>
+            <p><strong>Confidence:</strong> 0.90</p>
+            <p><strong>Description:</strong> Environment variable manipulation leading to debug mode exposure</p>
+</div>
+        <div class="vulnerability high">
+            <h3>Hardcoded Credentials</h3>
+            <p><strong>File:</strong> ./data/repositories/trottomv_python-insecure-app/app/main.py</p>
+            <p><strong>Severity:</strong> High</p>
+            <p><strong>Confidence:</strong> 1.00</p>
+            <p><strong>Description:</strong> Hardcoded secret value in configuration</p>
+<div class="code">SUPER_SECRET_NAME = 'admin'</div><p><strong>Recommendation:</strong> Remove hardcoded secrets and use environment variables or secure vaults</p></div>
+        <div class="vulnerability high">
+            <h3>Hardcoded Credentials</h3>
+            <p><strong>File:</strong> ./data/repositories/trottomv_python-insecure-app/tests/test_main.py</p>
+            <p><strong>Severity:</strong> High</p>
+            <p><strong>Confidence:</strong> 0.95</p>
+            <p><strong>Description:</strong> Hardcoded credentials in configuration</p>
+<div class="code">PUBLIC_IP_SERVICE_URL = 'https://ip-api.com/json'</div><p><strong>Recommendation:</strong> Move credentials to environment variables or secure vault</p></div>
+        <div class="vulnerability medium">
+            <h3>Information Disclosure</h3>
+            <p><strong>File:</strong> ./data/repositories/trottomv_python-insecure-app/app/config.py</p>
+            <p><strong>Severity:</strong> Medium</p>
+            <p><strong>Confidence:</strong> 0.90</p>
+            <p><strong>Description:</strong> Exposing sensitive information in source code</p>
+<div class="code">SUPER_SECRET_NAME = "John Ripper"</div><p><strong>Recommendation:</strong> Remove sensitive information from source control</p></div>
+        <div class="vulnerability medium">
+            <h3>Debug Mode Exposure</h3>
+            <p><strong>File:</strong> ./data/repositories/trottomv_python-insecure-app/app/main.py</p>
+            <p><strong>Severity:</strong> Medium</p>
+            <p><strong>Confidence:</strong> 0.90</p>
+            <p><strong>Description:</strong> Debug mode exposed in production</p>
+<div class="code">debug=config.DEBUG</div><p><strong>Recommendation:</strong> Disable debug mode in production</p></div>
+        <div class="vulnerability medium">
+            <h3>Input Validation</h3>
+            <p><strong>File:</strong> ./data/repositories/trottomv_python-insecure-app/tests/test_main.py</p>
+            <p><strong>Severity:</strong> Medium</p>
+            <p><strong>Confidence:</strong> 0.85</p>
+            <p><strong>Description:</strong> Lack of input validation for name parameter</p>
+<div class="code">response = client.get("/?name=Bob")</div><p><strong>Recommendation:</strong> Implement proper input validation</p></div>
+        <div class="vulnerability medium">
+            <h3>Template Injection</h3>
+            <p><strong>File:</strong> ./data/repositories/trottomv_python-insecure-app/app/main.py</p>
+            <p><strong>Severity:</strong> Medium</p>
+            <p><strong>Confidence:</strong> 0.70</p>
+            <p><strong>Description:</strong> Potential template injection vulnerability due to unsanitized user input</p>
+<div class="code">content = f"<h1>Hello, {name}!</h1><h2>Public IP: <code>{public_ip}</code></h2>"</div><p><strong>Recommendation:</strong> Sanitize user input before using in templates</p></div>
+        <div class="vulnerability medium">
+            <h3>Zero Day Pattern</h3>
+            <p><strong>File:</strong> ./data/repositories/trottomv_python-insecure-app/app/main.py</p>
+            <p><strong>Severity:</strong> Medium</p>
+            <p><strong>Confidence:</strong> 0.70</p>
+            <p><strong>Description:</strong> Predictable default values</p>
+</div>
+        <div class="vulnerability low">
+            <h3>Information Disclosure</h3>
+            <p><strong>File:</strong> ./data/repositories/trottomv_python-insecure-app/app/main.py</p>
+            <p><strong>Severity:</strong> Low</p>
+            <p><strong>Confidence:</strong> 0.80</p>
+            <p><strong>Description:</strong> Exposing internal version information</p>
+<div class="code">version="0.0.1337"</div><p><strong>Recommendation:</strong> Hide version information in production</p></div>
+        <div class="vulnerability low">
+            <h3>Suspicious Pattern</h3>
+            <p><strong>File:</strong> ./data/repositories/trottomv_python-insecure-app/app/main.py</p>
+            <p><strong>Severity:</strong> Low</p>
+            <p><strong>Confidence:</strong> 0.60</p>
+            <p><strong>Description:</strong> Suspicious code pattern detected: f"<h1>Hello, {name}!</h1><h2>Public IP: <code>{public_ip}</code></h2>"</p>
+</div>
+    </div>
+    
+    <div class="recommendations">
+        <h2>💡 Recommendations</h2>
+        <ul>
+<li>🔑 Remove hardcoded credentials and use secure credential management</li><li>🔍 Investigate potential zero-day vulnerabilities with security experts</li><li>📚 Conduct regular security code reviews</li><li>🔄 Keep dependencies updated to latest secure versions</li><li>🧪 Implement automated security testing in CI/CD pipeline</li><li>📊 Monitor application for suspicious activities</li><li>🎓 Provide security training for development team</li>
+        </ul>
+    </div>
+</body>
+</html>

@@ -1,0 +1,131 @@
+
+🔒 VULNERABILITY ASSESSMENT REPORT
+==================================================
+
+Report ID: vuln_report_20250922_224856
+Generated: 2025-09-22T22:48:56.510973
+Repository: trottomv_python-insecure-app
+URL: https://github.com/trottomv/python-insecure-app
+
+📊 EXECUTIVE SUMMARY
+--------------------
+Overall Risk Level: Critical
+Total Vulnerabilities: 12
+Files Analyzed: 3
+
+Severity Breakdown:
+  Critical: 3
+  High: 2
+  Medium: 5
+  Low: 2
+
+🚨 VULNERABILITY FINDINGS
+-------------------------
+
+1. Hardcoded Credentials
+   File: ./data/repositories/trottomv_python-insecure-app/app/config.py
+   Line: None
+   Severity: Critical
+   Confidence: 1.00
+   Description: Hardcoded secret token in configuration file
+   Recommendation: Remove hardcoded secrets and use environment variables or secure vaults
+
+2. Hardcoded Secrets
+   File: ./data/repositories/trottomv_python-insecure-app/app/config.py
+   Line: None
+   Severity: Critical
+   Confidence: 0.95
+   Description: Hardcoded secrets in configuration file
+
+3. Environment Variable Manipulation
+   File: ./data/repositories/trottomv_python-insecure-app/app/config.py
+   Line: None
+   Severity: Critical
+   Confidence: 0.90
+   Description: Environment variable manipulation leading to debug mode exposure
+
+4. Hardcoded Credentials
+   File: ./data/repositories/trottomv_python-insecure-app/app/main.py
+   Line: 10
+   Severity: High
+   Confidence: 1.00
+   Description: Hardcoded secret value in configuration
+   Recommendation: Remove hardcoded secrets and use environment variables or secure vaults
+
+5. Hardcoded Credentials
+   File: ./data/repositories/trottomv_python-insecure-app/tests/test_main.py
+   Line: None
+   Severity: High
+   Confidence: 0.95
+   Description: Hardcoded credentials in configuration
+   Recommendation: Move credentials to environment variables or secure vault
+
+6. Information Disclosure
+   File: ./data/repositories/trottomv_python-insecure-app/app/config.py
+   Line: None
+   Severity: Medium
+   Confidence: 0.90
+   Description: Exposing sensitive information in source code
+   Recommendation: Remove sensitive information from source control
+
+7. Debug Mode Exposure
+   File: ./data/repositories/trottomv_python-insecure-app/app/main.py
+   Line: 15
+   Severity: Medium
+   Confidence: 0.90
+   Description: Debug mode exposed in production
+   Recommendation: Disable debug mode in production
+
+8. Input Validation
+   File: ./data/repositories/trottomv_python-insecure-app/tests/test_main.py
+   Line: 25
+   Severity: Medium
+   Confidence: 0.85
+   Description: Lack of input validation for name parameter
+   Recommendation: Implement proper input validation
+
+9. Template Injection
+   File: ./data/repositories/trottomv_python-insecure-app/app/main.py
+   Line: 32
+   Severity: Medium
+   Confidence: 0.70
+   Description: Potential template injection vulnerability due to unsanitized user input
+   Recommendation: Sanitize user input before using in templates
+
+10. Zero Day Pattern
+   File: ./data/repositories/trottomv_python-insecure-app/app/main.py
+   Line: None
+   Severity: Medium
+   Confidence: 0.70
+   Description: Predictable default values
+
+11. Information Disclosure
+   File: ./data/repositories/trottomv_python-insecure-app/app/main.py
+   Line: 13
+   Severity: Low
+   Confidence: 0.80
+   Description: Exposing internal version information
+   Recommendation: Hide version information in production
+
+12. Suspicious Pattern
+   File: ./data/repositories/trottomv_python-insecure-app/app/main.py
+   Line: 38
+   Severity: Low
+   Confidence: 0.60
+   Description: Suspicious code pattern detected: f"<h1>Hello, {name}!</h1><h2>Public IP: <code>{public_ip}</code></h2>"
+
+💡 RECOMMENDATIONS
+------------------
+1. 🔑 Remove hardcoded credentials and use secure credential management
+2. 🔍 Investigate potential zero-day vulnerabilities with security experts
+3. 📚 Conduct regular security code reviews
+4. 🔄 Keep dependencies updated to latest secure versions
+5. 🧪 Implement automated security testing in CI/CD pipeline
+6. 📊 Monitor application for suspicious activities
+7. 🎓 Provide security training for development team
+
+📈 RISK ASSESSMENT
+-----------------
+Risk Score: 49.79/100
+High Confidence Findings: 9
+Zero-day Indicators: 3

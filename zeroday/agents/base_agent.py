@@ -55,7 +55,7 @@ class BaseAgent(ABC):
             
         return logger
     
-    #@track_function(metadata={"agent_type": "base", "operation": "initialize"})
+    ##@track_function(metadata={"agent_type": "base", "operation": "initialize"})
     async def initialize(self, builder: Builder) -> None:
         """Initialize the agent with NeMo Builder"""
         self.builder = builder
@@ -67,7 +67,7 @@ class BaseAgent(ABC):
         """Agent-specific initialization logic"""
         pass
     
-    #@track_function(metadata={"agent_type": "base", "operation": "execute"})
+    ##@track_function(metadata={"agent_type": "base", "operation": "execute"})
     async def execute(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Execute the agent's main functionality with error handling and retries
@@ -105,12 +105,12 @@ class BaseAgent(ABC):
         self.logger.info(f"Retrying in {wait_time} seconds...")
         await asyncio.sleep(wait_time)
     
-    @track_function(metadata={"agent_type": "base", "operation": "validate_input"})
+    #@track_function(metadata={"agent_type": "base", "operation": "validate_input"})
     def validate_input(self, input_data: Dict[str, Any]) -> bool:
         """Validate input data - can be overridden by subclasses"""
         return isinstance(input_data, dict)
     
-    @track_function(metadata={"agent_type": "base", "operation": "cleanup"})
+    #@track_function(metadata={"agent_type": "base", "operation": "cleanup"})
     async def cleanup(self) -> None:
         """Cleanup resources - can be overridden by subclasses"""
         self.logger.info(f"Cleaning up agent: {self.config.name}")
@@ -153,7 +153,7 @@ class SecurityBaseAgent(BaseAgent):
         super().__init__(config)
         self.security_config = config
     
-    @track_function(metadata={"agent_type": "security", "operation": "filter_files"})
+    #@track_function(metadata={"agent_type": "security", "operation": "filter_files"})
     def filter_analyzable_files(self, files: List[str]) -> List[str]:
         """Filter files that can be analyzed based on size and type"""
         analyzable_files = []
@@ -172,7 +172,7 @@ class SecurityBaseAgent(BaseAgent):
                 
         return analyzable_files
     
-    @track_function(metadata={"agent_type": "security", "operation": "assess_confidence"})
+    #@track_function(metadata={"agent_type": "security", "operation": "assess_confidence"})
     def assess_vulnerability_confidence(self, vulnerability_data: Dict[str, Any]) -> float:
         """Assess confidence level of a detected vulnerability"""
         # Base implementation - can be overridden by specific agents

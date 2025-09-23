@@ -7,6 +7,9 @@ transformers>=4.37.0
 accelerate
 bitsandbytes
 
+# Environment Management
+python-dotenv
+
 # Multi-agent Framework
 crewai
 langchain

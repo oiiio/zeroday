@@ -11,6 +11,14 @@ import os
 import sys
 from pathlib import Path
 
+# Load environment variables from .env file
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    # dotenv not installed, skip
+    pass
+
 # Add the project root to Python path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
@@ -22,7 +30,7 @@ from zeroday.agents.deephat_security_agent import DeepHatConfig
 from zeroday.agents.report_generation_agent import ReportConfig
 
 
-async def analyze_repository(repo_url: str, output_dir: str = "./data/reports") -> dict:
+async def analyze_repository(repo_url: str, output_dir: str = "./data/reports", use_remote: bool = False) -> dict:
     """
     Analyze a repository for vulnerabilities
     
@@ -64,8 +72,15 @@ async def analyze_repository(repo_url: str, output_dir: str = "./data/reports") 
             model_name="DeepHat/DeepHat-V1-7B",
             device="auto",
             torch_dtype="auto",
+            use_remote=use_remote or os.getenv("USE_DEEPHAT_REMOTE", "false").lower() == "true",
+            hf_api_token=(
+                os.getenv("HUGGINGFACE_API_TOKEN") or 
+                os.getenv("HF_TOKEN") or 
+                os.getenv("HUGGINGFACE_TOKEN")
+            ),
             max_context_length=32768,
             temperature=0.1,
+            show_progress=True,
             enable_zero_day_detection=True
         ),
         
@@ -191,6 +206,12 @@ async def main():
         help="Enable verbose output"
     )
     
+    parser.add_argument(
+        "--remote",
+        action="store_true",
+        help="Use remote Hugging Face deployment instead of local model"
+    )
+    
     args = parser.parse_args()
     
     # Validate repository URL
@@ -203,7 +224,7 @@ async def main():
     
     # Run analysis
     try:
-        result = await analyze_repository(args.repo_url, args.output_dir)
+        result = await analyze_repository(args.repo_url, args.output_dir, args.remote)
         print_results(result)
         
         # Exit with appropriate code

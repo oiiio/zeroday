@@ -1,11 +1,31 @@
 """
 DeepHat Interface - Utilities for interacting with DeepHat-V1-7B model
+Supports both local and remote Hugging Face deployment
 """
 
 import os
+import requests
+import time
 from typing import Dict, List, Optional, Any
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import torch
+from tqdm import tqdm
+
+# Try to load environment variables from .env file
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    # dotenv not installed, skip
+    pass
+
+# Try to import huggingface_hub for alternative API access
+try:
+    from huggingface_hub import InferenceClient
+    HF_HUB_AVAILABLE = True
+except ImportError:
+    InferenceClient = None
+    HF_HUB_AVAILABLE = False
 
 
 class DeepHatInterface:
@@ -16,33 +36,210 @@ class DeepHatInterface:
         model_name: str = "DeepHat/DeepHat-V1-7B",
         model_path: Optional[str] = None,
         device: str = "auto",
-        torch_dtype: str = "auto"
+        torch_dtype: str = "auto",
+        use_remote: bool = False,
+        hf_api_token: Optional[str] = None,
+        remote_endpoint: Optional[str] = None
     ):
         self.model_name = model_name
         self.model_path = model_path
         self.device = device
         self.torch_dtype = torch_dtype
+        self.use_remote = use_remote
+        
+        # Check multiple possible environment variable names for HF token
+        self.hf_api_token = (
+            hf_api_token or 
+            os.getenv("HUGGINGFACE_API_TOKEN") or 
+            os.getenv("HF_TOKEN") or
+            os.getenv("HUGGINGFACE_TOKEN")
+        )
+        
+        self.remote_endpoint = remote_endpoint
+        
+        # Local model attributes
         self.model = None
         self.tokenizer = None
         self.is_loaded = False
+        
+        # Remote model attributes
+        self.remote_ready = False
+        self.hf_client = None  # For Hugging Face Hub client
     
     def load_model(self) -> bool:
         """
-        Load the DeepHat model and tokenizer
+        Load the DeepHat model and tokenizer (local) or setup remote connection
         
         Returns:
             True if successful, False otherwise
         """
+        if self.use_remote:
+            return self._setup_remote_connection()
+        else:
+            return self._load_local_model()
+    
+    def _setup_remote_connection(self) -> bool:
+        """Setup connection to remote Hugging Face deployment"""
+        try:
+            print("🌐 Setting up remote DeepHat connection...")
+            
+            if not self.hf_api_token:
+                print("❌ Error: HUGGINGFACE_API_TOKEN is required for remote deployment")
+                print("💡 Tip: Set environment variable HUGGINGFACE_API_TOKEN or HF_TOKEN")
+                return False
+            
+            # Try Hugging Face Hub with Featherless AI first (recommended approach)
+            if HF_HUB_AVAILABLE:
+                print("🔌 Trying Hugging Face Hub with Featherless AI provider...")
+                if self._setup_hf_hub_connection():
+                    return True
+            
+            # Fallback to direct Inference API
+            print("🔌 Trying direct Hugging Face Inference API...")
+            return self._setup_inference_api_connection()
+            
+        except Exception as e:
+            print(f"❌ Error setting up remote connection: {e}")
+            return False
+    
+    def _setup_hf_hub_connection(self) -> bool:
+        """Setup connection using Hugging Face Hub with Featherless AI provider"""
+        try:
+            if not HF_HUB_AVAILABLE or InferenceClient is None:
+                print("❌ huggingface_hub not available")
+                return False
+            
+            client = InferenceClient(
+                provider="featherless-ai",
+                api_key=self.hf_api_token
+            )
+            
+            # Test the connection with a simple message
+            print(f"🧪 Testing connection to {self.model_name}...")
+            completion = client.chat.completions.create(
+                model=self.model_name,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": "Hello, this is a test message."
+                    }
+                ],
+                max_tokens=10
+            )
+            
+            if completion and completion.choices:
+                self.hf_client = client
+                self.remote_ready = True
+                print(f"✅ Hugging Face Hub connection established with {self.model_name}")
+                return True
+            else:
+                print(f"❌ No response from {self.model_name} via HF Hub")
+                return False
+                
+        except Exception as e:
+            print(f"❌ HF Hub connection failed: {e}")
+            return False
+    
+    def _setup_inference_api_connection(self) -> bool:
+        """Setup connection using direct Inference API (fallback method)"""
+        try:
+            # Check if the specific DeepHat model is available
+            # If not, we can fallback to a compatible model
+            fallback_models = [
+                self.model_name,  # Original DeepHat model
+                "microsoft/DialoGPT-medium",  # Fallback for testing
+                "gpt2",  # Well-known model that should be available
+                "distilbert-base-uncased"  # Another well-known model
+            ]
+            
+            # Determine endpoint
+            endpoint_base = "https://api-inference.huggingface.co/models/"
+            
+            for model_name in fallback_models:
+                try:
+                    if self.remote_endpoint:
+                        endpoint = self.remote_endpoint
+                    else:
+                        endpoint = endpoint_base + model_name
+                    
+                    print(f"🔌 Testing connection to model: {model_name}")
+                    
+                    # Test connection
+                    headers = {
+                        "Authorization": f"Bearer {self.hf_api_token}",
+                        "Content-Type": "application/json"
+                    }
+                    
+                    test_payload = {
+                        "inputs": "Hello, this is a test.",
+                        "parameters": {
+                            "max_new_tokens": 10,
+                            "temperature": 0.1,
+                            "return_full_text": False
+                        },
+                        "options": {
+                            "wait_for_model": True
+                        }
+                    }
+                    
+                    response = requests.post(endpoint, headers=headers, json=test_payload, timeout=30)
+                    
+                    if response.status_code == 200:
+                        self.remote_endpoint = endpoint
+                        self.model_name = model_name  # Update to working model
+                        self.remote_ready = True
+                        print(f"✅ Remote connection established successfully with {model_name}")
+                        if model_name != fallback_models[0]:
+                            print(f"⚠️  Note: Using fallback model {model_name} instead of {fallback_models[0]}")
+                        return True
+                    elif response.status_code == 401:
+                        print(f"❌ Authentication failed. Your Hugging Face token is invalid or expired.")
+                        print(f"💡 Please update your HUGGINGFACE_API_TOKEN in .env file")
+                        print(f"💡 Get a new token at: https://huggingface.co/settings/tokens")
+                        return False
+                    elif response.status_code == 503:
+                        print(f"⏳ Model {model_name} is loading, trying next...")
+                        continue
+                    elif response.status_code == 404:
+                        print(f"❌ Model {model_name} not found or not available via Inference API, trying next...")
+                        continue
+                    else:
+                        print(f"⚠️  Model {model_name} returned {response.status_code}: {response.text}")
+                        continue
+                        
+                except Exception as e:
+                    print(f"❌ Error testing {model_name}: {str(e)}")
+                    continue
+            
+            print("❌ No compatible models found on Hugging Face Inference API")
+            print("💡 Suggestions:")
+            print("   - Verify your HUGGINGFACE_API_TOKEN is valid")
+            print("   - Try using local deployment instead (remove --remote flag)")
+            print("   - Check if the model exists and supports Inference API")
+            return False
+                
+        except Exception as e:
+            print(f"❌ Failed to setup remote DeepHat connection: {str(e)}")
+            return False
+    
+    def _load_local_model(self) -> bool:
+        """Load local DeepHat model with progress tracking"""
         try:
             model_name_or_path = self.model_path or self.model_name
+            print(f"🔧 Loading local DeepHat model: {model_name_or_path}")
             
-            # Load tokenizer
+            # Load tokenizer with progress
+            print("📝 Loading tokenizer...")
             self.tokenizer = AutoTokenizer.from_pretrained(model_name_or_path)
+            print("✅ Tokenizer loaded successfully")
             
             # Determine torch dtype
             torch_dtype = self._get_torch_dtype()
             
-            # Load model
+            # Load model with progress
+            print("🧠 Loading model weights... (this may take several minutes)")
+            print("💾 Expected download size: ~15GB for DeepHat-V1-7B")
+            
             self.model = AutoModelForCausalLM.from_pretrained(
                 model_name_or_path,
                 torch_dtype=torch_dtype,
@@ -51,10 +248,11 @@ class DeepHatInterface:
             )
             
             self.is_loaded = True
+            print("✅ Local DeepHat model loaded successfully")
             return True
             
         except Exception as e:
-            print(f"Failed to load DeepHat model: {str(e)}")
+            print(f"❌ Failed to load local DeepHat model: {str(e)}")
             return False
     
     def _get_torch_dtype(self):
@@ -71,20 +269,144 @@ class DeepHatInterface:
         prompt: str,
         max_new_tokens: int = 2048,
         temperature: float = 0.1,
-        do_sample: bool = False
+        do_sample: Optional[bool] = None,
+        show_progress: bool = False
     ) -> str:
         """
-        Generate response from DeepHat model
+        Generate response from DeepHat model (local or remote)
         
         Args:
             prompt: Input prompt
             max_new_tokens: Maximum new tokens to generate
             temperature: Temperature for generation
             do_sample: Whether to use sampling
+            show_progress: Whether to show progress bar
             
         Returns:
             Generated response
         """
+        if self.use_remote:
+            return self._generate_remote_response(prompt, max_new_tokens, temperature, show_progress)
+        else:
+            return self._generate_local_response(prompt, max_new_tokens, temperature, do_sample, show_progress)
+    
+    def _generate_remote_response(
+        self, 
+        prompt: str, 
+        max_new_tokens: int, 
+        temperature: float,
+        show_progress: bool = False
+    ) -> str:
+        """Generate response using remote Hugging Face API"""
+        if not self.remote_ready:
+            raise RuntimeError("Remote connection not established. Call load_model() first.")
+        
+        try:
+            # Try HF Hub client first if available
+            if self.hf_client is not None:
+                return self._generate_hf_hub_response(prompt, max_new_tokens, temperature, show_progress)
+            else:
+                return self._generate_inference_api_response(prompt, max_new_tokens, temperature, show_progress)
+                
+        except Exception as e:
+            raise RuntimeError(f"Remote generation failed: {str(e)}")
+    
+    def _generate_hf_hub_response(
+        self, 
+        prompt: str, 
+        max_new_tokens: int, 
+        temperature: float,
+        show_progress: bool = False
+    ) -> str:
+        """Generate response using Hugging Face Hub client"""
+        try:
+            if self.hf_client is None:
+                raise RuntimeError("HF Hub client not initialized")
+                
+            if show_progress:
+                print("🌐 Sending request to remote DeepHat via HF Hub...")
+            
+            messages = [
+                {"role": "system", "content": "You are DeepHat, created by Kindo.ai. You are a helpful assistant that is an expert in Cybersecurity and DevOps."},
+                {"role": "user", "content": prompt}
+            ]
+            
+            completion = self.hf_client.chat.completions.create(
+                model=self.model_name,
+                messages=messages,
+                max_tokens=max_new_tokens,
+                temperature=temperature
+            )
+            
+            if completion and completion.choices and len(completion.choices) > 0:
+                response_content = completion.choices[0].message.content
+                if show_progress:
+                    print("✅ Remote response received via HF Hub")
+                return response_content or ""
+            else:
+                raise ValueError("No response received from HF Hub")
+                
+        except Exception as e:
+            raise RuntimeError(f"HF Hub generation failed: {str(e)}")
+    
+    def _generate_inference_api_response(
+        self, 
+        prompt: str, 
+        max_new_tokens: int, 
+        temperature: float,
+        show_progress: bool = False
+    ) -> str:
+        """Generate response using direct Inference API"""
+        try:
+            headers = {
+                "Authorization": f"Bearer {self.hf_api_token}",
+                "Content-Type": "application/json"
+            }
+            
+            payload = {
+                "inputs": prompt,
+                "parameters": {
+                    "max_new_tokens": max_new_tokens,
+                    "temperature": temperature,
+                    "do_sample": temperature > 0,
+                    "return_full_text": False
+                }
+            }
+            
+            if show_progress:
+                print("🌐 Sending request to remote DeepHat via Inference API...")
+            
+            response = requests.post(
+                self.remote_endpoint or "", 
+                headers=headers, 
+                json=payload, 
+                timeout=300  # 5 minute timeout
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                if isinstance(result, list) and len(result) > 0:
+                    generated_text = result[0].get("generated_text", "")
+                    if show_progress:
+                        print("✅ Remote response received via Inference API")
+                    return generated_text
+                else:
+                    raise ValueError("Unexpected response format")
+            else:
+                raise ValueError(f"Remote API error: {response.status_code} - {response.text}")
+                
+        except Exception as e:
+            raise RuntimeError(f"Inference API generation failed: {str(e)}")
+    
+    def _generate_local_response(
+        self, 
+        prompt: str, 
+        max_new_tokens: int, 
+        temperature: float, 
+        do_sample: Optional[bool] = None,
+        show_progress: bool = False
+    ) -> str:
+        """Generate response using local model"""
         if not self.is_loaded:
             raise RuntimeError("Model not loaded. Call load_model() first.")
         
@@ -108,6 +430,9 @@ class DeepHatInterface:
         if do_sample is None:
             do_sample = temperature > 0
         
+        if show_progress:
+            print(f"🧠 Generating response locally (max_tokens: {max_new_tokens})...")
+        
         # Generate response
         generated_ids = self.model.generate( # type: ignore
             **model_inputs,
@@ -123,6 +448,10 @@ class DeepHatInterface:
         ]
         
         response = self.tokenizer.batch_decode(generated_ids, skip_special_tokens=True)[0] # type: ignore
+        
+        if show_progress:
+            print("✅ Local response generated")
+        
         return response
     
     def analyze_code_for_vulnerabilities(
@@ -302,7 +631,10 @@ def create_deephat_interface(
     model_name: str = "DeepHat/DeepHat-V1-7B",
     model_path: Optional[str] = None,
     device: str = "auto",
-    torch_dtype: str = "auto"
+    torch_dtype: str = "auto",
+    use_remote: bool = False,
+    hf_api_token: Optional[str] = None,
+    remote_endpoint: Optional[str] = None
 ) -> DeepHatInterface:
     """
     Create and load a DeepHat interface
@@ -312,11 +644,17 @@ def create_deephat_interface(
         model_path: Optional local path to model
         device: Device to load model on
         torch_dtype: Torch data type
+        use_remote: Whether to use remote Hugging Face deployment
+        hf_api_token: Hugging Face API token for remote access
+        remote_endpoint: Custom remote endpoint URL
         
     Returns:
         Loaded DeepHatInterface instance
     """
-    interface = DeepHatInterface(model_name, model_path, device, torch_dtype)
+    interface = DeepHatInterface(
+        model_name, model_path, device, torch_dtype,
+        use_remote, hf_api_token, remote_endpoint
+    )
     
     if not interface.load_model():
         raise RuntimeError("Failed to load DeepHat model")
