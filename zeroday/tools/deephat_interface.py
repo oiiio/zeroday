@@ -71,7 +71,7 @@ class DeepHatInterface:
         prompt: str,
         max_new_tokens: int = 2048,
         temperature: float = 0.1,
-        do_sample: bool = None
+        do_sample: bool = False
     ) -> str:
         """
         Generate response from DeepHat model
@@ -90,31 +90,31 @@ class DeepHatInterface:
         
         # Prepare messages for chat template
         messages = [
-            {"role": "system", "content": "You are DeepHat, created by Kindo.ai. You are a helpful assistant that is an expert in Cybersecurity and DevOps."},
+            {"role": "system", "content": "You are DeepHat. You are a helpful assistant that is an expert in Cybersecurity and DevOps."},
             {"role": "user", "content": prompt}
         ]
         
         # Apply chat template
-        text = self.tokenizer.apply_chat_template(
+        text = self.tokenizer.apply_chat_template( # type: ignore
             messages,
             tokenize=False,
             add_generation_prompt=True
         )
         
         # Tokenize input
-        model_inputs = self.tokenizer([text], return_tensors="pt").to(self.model.device)
+        model_inputs = self.tokenizer([text], return_tensors="pt").to(self.model.device) # type: ignore
         
         # Determine sampling
         if do_sample is None:
             do_sample = temperature > 0
         
         # Generate response
-        generated_ids = self.model.generate(
+        generated_ids = self.model.generate( # type: ignore
             **model_inputs,
             max_new_tokens=max_new_tokens,
             temperature=temperature,
             do_sample=do_sample,
-            pad_token_id=self.tokenizer.eos_token_id
+            pad_token_id=self.tokenizer.eos_token_id # type: ignore
         )
         
         # Decode response
@@ -122,7 +122,7 @@ class DeepHatInterface:
             output_ids[len(input_ids):] for input_ids, output_ids in zip(model_inputs.input_ids, generated_ids)
         ]
         
-        response = self.tokenizer.batch_decode(generated_ids, skip_special_tokens=True)[0]
+        response = self.tokenizer.batch_decode(generated_ids, skip_special_tokens=True)[0] # type: ignore
         return response
     
     def analyze_code_for_vulnerabilities(

@@ -37,7 +37,8 @@ class GitOperations:
         
         # Clone repository
         clone_kwargs = {
-            'depth': depth if depth > 0 else None
+            'depth': depth if depth > 0 else None,
+            'branch': None
         }
         
         if branch:
