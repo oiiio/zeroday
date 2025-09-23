@@ -20,7 +20,7 @@ The ZeroDay pipeline consists of four main agents orchestrated through the NVIDI
 
 1. **Repository Ingestion Agent** - Clones and preprocesses GitHub repositories
 2. **Python Analysis Agent** - Performs static analysis and pattern detection
-3. **DeepHat Security Agent** - Advanced LLM-based vulnerability detection using DeepHat-V1-7B
+3. **DeepHat Security Agent** - LLM-based vulnerability detection using DeepHat-V1-7B
 4. **Report Generation Agent** - Consolidates findings and generates comprehensive reports
 
 ```

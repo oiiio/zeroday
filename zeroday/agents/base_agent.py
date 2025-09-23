@@ -55,7 +55,7 @@ class BaseAgent(ABC):
             
         return logger
     
-    @track_function(metadata={"agent_type": "base", "operation": "initialize"})
+    #@track_function(metadata={"agent_type": "base", "operation": "initialize"})
     async def initialize(self, builder: Builder) -> None:
         """Initialize the agent with NeMo Builder"""
         self.builder = builder
@@ -67,7 +67,7 @@ class BaseAgent(ABC):
         """Agent-specific initialization logic"""
         pass
     
-    @track_function(metadata={"agent_type": "base", "operation": "execute"})
+    #@track_function(metadata={"agent_type": "base", "operation": "execute"})
     async def execute(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Execute the agent's main functionality with error handling and retries
