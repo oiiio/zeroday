@@ -80,16 +80,24 @@ class OrchestrationAgent(BaseAgent):
         self.logger.info("Initializing Orchestration Agent and sub-agents...")
         
         # Initialize all agents
-        self.agents = {
-            "repo_ingestion": RepoIngestionAgent(self.orchestration_config.repo_ingestion_config),
-            "python_analysis": PythonAnalysisAgent(self.orchestration_config.python_analysis_config),
-            "deephat_security": DeepHatSecurityAgent(self.orchestration_config.deephat_config),
-            "report_generation": ReportGenerationAgent(self.orchestration_config.report_config)
-        }
+        try:
+            self.logger.info("Creating agent instances...")
+            self.agents = {
+                "repo_ingestion": RepoIngestionAgent(self.orchestration_config.repo_ingestion_config),
+                "python_analysis": PythonAnalysisAgent(self.orchestration_config.python_analysis_config),
+                "deephat_security": DeepHatSecurityAgent(self.orchestration_config.deephat_config),
+                "report_generation": ReportGenerationAgent(self.orchestration_config.report_config)
+            }
+            self.logger.info(f"Created {len(self.agents)} agent instances")
+        except Exception as e:
+            self.logger.error(f"Failed to create agent instances: {str(e)}")
+            raise
         
         # Initialize each agent
+        failed_agents = []
         for agent_name, agent in self.agents.items():
             try:
+                self.logger.info(f"Initializing {agent_name} agent...")
                 # Check if agent has builder attribute before initializing
                 if hasattr(agent, 'builder'):
                     agent.builder = self.builder
@@ -103,8 +111,17 @@ class OrchestrationAgent(BaseAgent):
                     
             except Exception as e:
                 self.logger.error(f"Failed to initialize {agent_name} agent: {str(e)}")
+                # Mark for removal instead of deleting immediately
+                failed_agents.append(agent_name)
                 if not self.orchestration_config.continue_on_agent_failure:
                     raise
+        
+        # Remove failed agents from the dictionary
+        for agent_name in failed_agents:
+            if agent_name in self.agents:
+                del self.agents[agent_name]
+        
+        self.logger.info(f"Successfully initialized {len(self.agents)} agents: {list(self.agents.keys())}")
         
         self.logger.info("Orchestration Agent initialization complete")
     

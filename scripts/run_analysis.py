@@ -82,14 +82,14 @@ async def analyze_repository(repo_url: str, output_dir: str = "./data/reports") 
     orchestration_agent = OrchestrationAgent(orchestration_config)
     
     try:
-        # Note: In a real implementation, you would initialize with a proper NeMo Builder
-        # For this demo, we'll simulate the initialization
+        # Initialize the orchestration agent manually (bypassing NeMo for now)
         print("🚀 Initializing agents...")
-        # await orchestration_agent.initialize(builder)
+        orchestration_agent.builder = None  # Set builder to None for now
+        await orchestration_agent._initialize_agent_specific()
         
-        # Execute pipeline - call _execute_core directly to avoid decorator issues
+        # Execute pipeline
         print("⚙️ Executing vulnerability detection pipeline...")
-        result = await orchestration_agent._execute_core({"repo_url": repo_url})
+        result = await orchestration_agent.execute({"repo_url": repo_url})
         
         return result
         
